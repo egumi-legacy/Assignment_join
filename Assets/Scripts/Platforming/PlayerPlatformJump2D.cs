@@ -1,3 +1,4 @@
+using MenuLevelProgression;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -5,7 +6,7 @@ using UnityEngine.InputSystem;
 namespace Platforming
 {
     [RequireComponent(typeof(Rigidbody2D))]
-    public sealed class PlayerPlatformJump2D : MonoBehaviour
+    public sealed class PlayerPlatformJump2D : MonoBehaviour, ILevelScopedReset
     {
         [Header("Grounding")]
         [SerializeField] private Transform groundCheck;
