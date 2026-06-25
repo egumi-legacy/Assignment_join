@@ -50,6 +50,28 @@ namespace Traits
             return false;
         }
 
+        public bool TryAddTraitToFirstEmpty(TraitType trait)
+        {
+            EnsureInitialized();
+            if (HasTrait(trait))
+            {
+                return true;
+            }
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                TraitSlot slot = slots[i];
+                if (slot.IsEmpty && !slot.Locked)
+                {
+                    slot.Trait = trait;
+                    NotifyChanged();
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public void SelectNext(int direction)
         {
             if (slots.Count == 0 || direction == 0)

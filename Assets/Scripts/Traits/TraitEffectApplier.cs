@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Platforming;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 namespace Traits
 {
@@ -11,11 +12,15 @@ namespace Traits
         [SerializeField] private bool affectRigidbody = true;
         [SerializeField] private bool affectVisuals = true;
         [SerializeField, Range(0.05f, 1f)] private float nonCollidableAlpha = 0.35f;
+        [SerializeField] private Color slimeTint = new Color(0.35f, 1f, 0.35f, 1f);
 
         private TraitSlotContainer container;
         private Collider2D[] colliders;
         private bool[] initialTriggerStates;
         private SpriteRenderer[] spriteRenderers;
+        private Color[] initialSpriteColors;
+        private Tilemap[] tilemaps;
+        private Color[] initialTilemapColors;
         private Rigidbody2D body;
         private PlayerPlatformJump2D playerMovement;
         private float initialGravityScale;
@@ -30,7 +35,21 @@ namespace Traits
             {
                 initialTriggerStates[i] = colliders[i] != null && colliders[i].isTrigger;
             }
+
             spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+            initialSpriteColors = new Color[spriteRenderers.Length];
+            for (int i = 0; i < spriteRenderers.Length; i++)
+            {
+                initialSpriteColors[i] = spriteRenderers[i] != null ? spriteRenderers[i].color : Color.white;
+            }
+
+            tilemaps = GetComponentsInChildren<Tilemap>();
+            initialTilemapColors = new Color[tilemaps.Length];
+            for (int i = 0; i < tilemaps.Length; i++)
+            {
+                initialTilemapColors[i] = tilemaps[i] != null ? tilemaps[i].color : Color.white;
+            }
+
             body = GetComponent<Rigidbody2D>();
             playerMovement = GetComponent<PlayerPlatformJump2D>();
             if (body != null)
@@ -61,6 +80,7 @@ namespace Traits
         {
             bool hasCollidable = container.HasTrait(TraitType.Collidable);
             bool hasForceAffected = container.HasTrait(TraitType.ForceAffected);
+            bool hasSlime = container.HasTrait(TraitType.Slime);
 
             if (affectColliders)
             {
@@ -102,20 +122,52 @@ namespace Traits
 
             if (affectVisuals)
             {
-                float alpha = hasCollidable ? 1f : nonCollidableAlpha;
-                for (int i = 0; i < spriteRenderers.Length; i++)
-                {
-                    SpriteRenderer spriteRenderer = spriteRenderers[i];
-                    if (spriteRenderer == null)
-                    {
-                        continue;
-                    }
-
-                    Color color = spriteRenderer.color;
-                    color.a = alpha;
-                    spriteRenderer.color = color;
-                }
+                float alphaMultiplier = hasCollidable ? 1f : nonCollidableAlpha;
+                ApplySpriteVisuals(hasSlime, alphaMultiplier);
+                ApplyTilemapVisuals(hasSlime, alphaMultiplier);
             }
+        }
+
+        private void ApplySpriteVisuals(bool hasSlime, float alphaMultiplier)
+        {
+            for (int i = 0; i < spriteRenderers.Length; i++)
+            {
+                SpriteRenderer spriteRenderer = spriteRenderers[i];
+                if (spriteRenderer == null)
+                {
+                    continue;
+                }
+
+                spriteRenderer.color = BuildTraitColor(initialSpriteColors[i], hasSlime, alphaMultiplier);
+            }
+        }
+
+        private void ApplyTilemapVisuals(bool hasSlime, float alphaMultiplier)
+        {
+            for (int i = 0; i < tilemaps.Length; i++)
+            {
+                Tilemap tilemap = tilemaps[i];
+                if (tilemap == null)
+                {
+                    continue;
+                }
+
+                tilemap.color = BuildTraitColor(initialTilemapColors[i], hasSlime, alphaMultiplier);
+            }
+        }
+
+        private Color BuildTraitColor(Color baseColor, bool hasSlime, float alphaMultiplier)
+        {
+            Color color = baseColor;
+            if (hasSlime)
+            {
+                color.r *= slimeTint.r;
+                color.g *= slimeTint.g;
+                color.b *= slimeTint.b;
+            }
+
+            color.a = baseColor.a * alphaMultiplier;
+            return color;
         }
 
         private Collider2D[] GetGameplayColliders()

@@ -30,30 +30,52 @@ namespace Platforming
             this.chargeDuration = chargeDuration;
         }
 
-        public bool HasSlimeAbility { get; private set; }
         public bool IsCompressing { get; private set; }
         public bool IsChargeReady { get; private set; }
         public bool HasQueuedJump => hasQueuedJump;
         public float ChargeProgress => Math.Min(chargeTimer / chargeDuration, 1f);
 
-        public void GrantSlimeAbility()
-        {
-            HasSlimeAbility = true;
-        }
-
         public void ResetForLevel()
         {
-            HasSlimeAbility = false;
             CancelCompression();
             wasDownHeld = false;
         }
 
-        public JumpAction Tick(float deltaTime, bool isGrounded, bool downHeld, bool jumpPressed, bool hasControl)
+        public JumpAction CancelForTraitLoss()
+        {
+            hasQueuedJump = false;
+            return CancelCompression() ? JumpAction.SlimeCompressionCancelled : JumpAction.None;
+        }
+
+        public JumpAction StartCompressionFromSurface()
+        {
+            if (IsCompressing)
+            {
+                return JumpAction.None;
+            }
+
+            StartCompression();
+            wasDownHeld = true;
+            return JumpAction.SlimeCompressionStarted;
+        }
+
+        public JumpAction Tick(float deltaTime, bool isGrounded, bool downHeld, bool jumpPressed, bool hasControl, bool hasSlimeAbility)
         {
             if (!hasControl || !isGrounded)
             {
                 wasDownHeld = downHeld;
                 return CancelCompression() ? JumpAction.SlimeCompressionCancelled : JumpAction.None;
+            }
+
+            if (!hasSlimeAbility)
+            {
+                wasDownHeld = downHeld;
+                if (CancelCompression())
+                {
+                    return JumpAction.SlimeCompressionCancelled;
+                }
+
+                return jumpPressed && !downHeld ? JumpAction.NormalJump : JumpAction.None;
             }
 
             if (IsCompressing)
@@ -98,7 +120,7 @@ namespace Platforming
                 return JumpAction.None;
             }
 
-            if (HasSlimeAbility && downHeld && !wasDownHeld)
+            if (downHeld && !wasDownHeld)
             {
                 StartCompression();
                 if (jumpPressed)

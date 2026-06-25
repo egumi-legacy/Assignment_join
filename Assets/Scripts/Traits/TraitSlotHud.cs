@@ -85,6 +85,8 @@ namespace Traits
                     return "可碰撞";
                 case TraitType.ForceAffected:
                     return "可受力";
+                case TraitType.Slime:
+                    return "史莱姆";
                 default:
                     return "空槽";
             }

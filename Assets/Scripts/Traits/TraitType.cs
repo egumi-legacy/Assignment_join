@@ -4,6 +4,7 @@ namespace Traits
     {
         Empty,
         Collidable,
-        ForceAffected
+        ForceAffected,
+        Slime
     }
 }
