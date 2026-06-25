@@ -23,6 +23,9 @@ namespace MenuLevelProgression
             new LevelDefinition()
         };
 
+        [Header("Failure Reset")]
+        [SerializeField] private float outOfScreenMargin = 2f;
+
         [Header("UI")]
         [SerializeField] private GameFlowUI ui;
 
@@ -41,6 +44,7 @@ namespace MenuLevelProgression
         {
             levelLoader = GetComponent<LevelLoader>();
             Time.timeScale = 1f;
+            SetPlayerGameplayActive(false);
         }
 
         private void Start()
@@ -53,6 +57,11 @@ namespace MenuLevelProgression
             if (state == GameFlowState.Playing && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 PauseGame();
+            }
+
+            if (state == GameFlowState.Playing && IsPlayerBelowScreen())
+            {
+                RestartCurrentLevelWithFeedback();
             }
         }
 
@@ -69,6 +78,7 @@ namespace MenuLevelProgression
             }
 
             Time.timeScale = 1f;
+            SetPlayerGameplayActive(false);
             state = GameFlowState.LevelSelect;
             ui?.ShowLevelSelect(levels, progress.HighestUnlockedLevel);
         }
@@ -137,6 +147,17 @@ namespace MenuLevelProgression
             StartCoroutine(LoadLevelRoutine(currentLevel));
         }
 
+        public void RestartCurrentLevelWithFeedback()
+        {
+            if (transitionInProgress || currentLevel == null)
+            {
+                return;
+            }
+
+            ui?.PlayResetFlash();
+            RestartCurrentLevel();
+        }
+
         public void ReturnToLevelSelect()
         {
             StartCoroutine(ReturnToLevelSelectRoutine());
@@ -157,6 +178,7 @@ namespace MenuLevelProgression
 
             state = GameFlowState.CompletionReward;
             Time.timeScale = 1f;
+            SetPlayerGameplayActive(false);
             ui?.ShowCompletionReward(HasLevel(nextLevelId));
         }
 
@@ -191,6 +213,7 @@ namespace MenuLevelProgression
         private IEnumerator ShowMainMenuRoutine()
         {
             Time.timeScale = 1f;
+            SetPlayerGameplayActive(false);
             yield return levelLoader.UnloadCurrentLevel();
             currentLevel = null;
             state = GameFlowState.MainMenu;
@@ -200,6 +223,7 @@ namespace MenuLevelProgression
         private IEnumerator ReturnToLevelSelectRoutine()
         {
             Time.timeScale = 1f;
+            SetPlayerGameplayActive(false);
             yield return levelLoader.UnloadCurrentLevel();
             currentLevel = null;
             ShowLevelSelect();
@@ -214,11 +238,40 @@ namespace MenuLevelProgression
 
             transitionInProgress = true;
             Time.timeScale = 1f;
+            SetPlayerGameplayActive(false);
             ui?.ShowGameplay();
             yield return levelLoader.LoadLevel(level, player);
             currentLevel = level;
+            SetPlayerGameplayActive(true);
             state = GameFlowState.Playing;
             transitionInProgress = false;
+        }
+
+        private void SetPlayerGameplayActive(bool active)
+        {
+            if (player == null)
+            {
+                return;
+            }
+
+            player.gameObject.SetActive(active);
+        }
+
+        private bool IsPlayerBelowScreen()
+        {
+            if (player == null || !player.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            Camera camera = Camera.main;
+            if (camera == null)
+            {
+                return false;
+            }
+
+            float cameraBottom = camera.ViewportToWorldPoint(Vector3.zero).y;
+            return player.position.y < cameraBottom - Mathf.Max(0f, outOfScreenMargin);
         }
 
         private bool HasLevel(int levelId)

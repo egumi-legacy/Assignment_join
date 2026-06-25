@@ -7,7 +7,9 @@ namespace Traits
     {
         [SerializeField] private Camera worldCamera;
         [SerializeField] private TraitSlotContainer playerTraits;
+        [SerializeField] private Transform playerTransform;
         [SerializeField] private LayerMask hoverLayers = ~0;
+        [SerializeField] private float maxSwapDistance = 4f;
 
         private bool wasShiftHeld;
         private string feedbackMessage;
@@ -19,6 +21,25 @@ namespace Traits
 
         private void Awake()
         {
+            ResolveReferences();
+        }
+
+        private void Update()
+        {
+            ResolveCameraIfNeeded();
+            UpdateHoverTarget();
+            HandleScrollSelection();
+            HandleSwapInput();
+        }
+
+        public void ClearHover()
+        {
+            HoveredTraits = null;
+            wasShiftHeld = false;
+        }
+
+        private void ResolveReferences()
+        {
             if (worldCamera == null)
             {
                 worldCamera = Camera.main;
@@ -28,13 +49,19 @@ namespace Traits
             {
                 playerTraits = GetComponent<TraitSlotContainer>();
             }
+
+            if (playerTransform == null && playerTraits != null)
+            {
+                playerTransform = playerTraits.transform;
+            }
         }
 
-        private void Update()
+        private void ResolveCameraIfNeeded()
         {
-            UpdateHoverTarget();
-            HandleScrollSelection();
-            HandleSwapInput();
+            if (worldCamera == null || !worldCamera.isActiveAndEnabled)
+            {
+                worldCamera = Camera.main;
+            }
         }
 
         private void UpdateHoverTarget()
@@ -93,11 +120,28 @@ namespace Traits
             bool shiftHeld = Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed;
             if (shiftHeld && !wasShiftHeld)
             {
-                TraitSwapResult result = playerTraits.TrySwapSelectedWith(HoveredTraits);
-                ShowFeedback(result);
+                if (!IsHoveredTargetInRange())
+                {
+                    ShowFeedback("距离太远，不能交换");
+                }
+                else
+                {
+                    TraitSwapResult result = playerTraits.TrySwapSelectedWith(HoveredTraits);
+                    ShowFeedback(result);
+                }
             }
 
             wasShiftHeld = shiftHeld;
+        }
+
+        private bool IsHoveredTargetInRange()
+        {
+            if (HoveredTraits == null || playerTransform == null)
+            {
+                return true;
+            }
+
+            return Vector2.Distance(playerTransform.position, HoveredTraits.transform.position) <= Mathf.Max(0f, maxSwapDistance);
         }
 
         private void ShowFeedback(TraitSwapResult result)
@@ -105,19 +149,23 @@ namespace Traits
             switch (result)
             {
                 case TraitSwapResult.Success:
-                    feedbackMessage = "交换成功";
+                    ShowFeedback("交换成功");
                     break;
                 case TraitSwapResult.LockedSlot:
-                    feedbackMessage = "该特性槽已锁定，不能交换";
+                    ShowFeedback("该特性槽已锁定，不能交换");
                     break;
                 case TraitSwapResult.MissingContainer:
-                    feedbackMessage = "需要先悬停一个有特性的物体";
+                    ShowFeedback("需要先悬停一个有特性的物体");
                     break;
                 default:
-                    feedbackMessage = "不能交换当前特性槽";
+                    ShowFeedback("不能交换当前特性槽");
                     break;
             }
+        }
 
+        private void ShowFeedback(string message)
+        {
+            feedbackMessage = message;
             feedbackUntil = Time.time + 1.5f;
         }
     }

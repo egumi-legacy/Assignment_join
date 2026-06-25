@@ -11,6 +11,7 @@ namespace MenuLevelProgression
         [SerializeField] private GameObject pausePanel;
         [SerializeField] private GameObject completionRewardPanel;
         [SerializeField] private GameObject gameplayPanel;
+        [SerializeField] private GameObject traitHudRoot;
 
         [Header("Main Menu")]
         [SerializeField] private Button startButton;
@@ -35,32 +36,43 @@ namespace MenuLevelProgression
         [SerializeField] private Button rewardLevelSelectButton;
         [SerializeField] private Button rewardMainMenuButton;
 
+        [Header("Reset Feedback")]
+        [SerializeField] private Image resetFlashImage;
+        [SerializeField] private float resetFlashDuration = 0.18f;
+
         private GameFlowController flow;
+        private float resetFlashUntil;
 
         private void Awake()
         {
             flow = FindObjectOfType<GameFlowController>();
+            ShowMainMenu();
             WireButtons();
+        }
+
+        private void Update()
+        {
+            UpdateResetFlash();
         }
 
         public void ShowMainMenu()
         {
-            SetOnly(mainMenuPanel);
+            SetOnly(mainMenuPanel, false);
         }
 
         public void ShowGameplay()
         {
-            SetOnly(gameplayPanel);
+            SetOnly(gameplayPanel, true);
         }
 
         public void ShowPauseMenu()
         {
-            SetOnly(pausePanel);
+            SetOnly(pausePanel, false);
         }
 
         public void ShowCompletionReward(bool hasNextLevel)
         {
-            SetOnly(completionRewardPanel);
+            SetOnly(completionRewardPanel, false);
             if (rewardMessageText != null)
             {
                 rewardMessageText.text = "恭喜通关！";
@@ -75,8 +87,22 @@ namespace MenuLevelProgression
 
         public void ShowLevelSelect(LevelDefinition[] levels, int highestUnlockedLevel)
         {
-            SetOnly(levelSelectPanel);
+            SetOnly(levelSelectPanel, false);
             RebuildLevelButtons(levels, highestUnlockedLevel);
+        }
+
+        public void PlayResetFlash()
+        {
+            if (resetFlashImage == null)
+            {
+                return;
+            }
+
+            resetFlashUntil = Time.unscaledTime + Mathf.Max(0.01f, resetFlashDuration);
+            resetFlashImage.gameObject.SetActive(true);
+            Color color = resetFlashImage.color;
+            color.a = 0.75f;
+            resetFlashImage.color = color;
         }
 
         private void WireButtons()
@@ -129,13 +155,34 @@ namespace MenuLevelProgression
             }
         }
 
-        private void SetOnly(GameObject panel)
+        private void SetOnly(GameObject panel, bool showTraitHud)
         {
             SetActive(mainMenuPanel, panel == mainMenuPanel);
             SetActive(levelSelectPanel, panel == levelSelectPanel);
             SetActive(pausePanel, panel == pausePanel);
             SetActive(completionRewardPanel, panel == completionRewardPanel);
             SetActive(gameplayPanel, panel == gameplayPanel);
+            SetActive(traitHudRoot, showTraitHud);
+        }
+
+        private void UpdateResetFlash()
+        {
+            if (resetFlashImage == null || !resetFlashImage.gameObject.activeSelf)
+            {
+                return;
+            }
+
+            float duration = Mathf.Max(0.01f, resetFlashDuration);
+            float remaining = resetFlashUntil - Time.unscaledTime;
+            if (remaining <= 0f)
+            {
+                resetFlashImage.gameObject.SetActive(false);
+                return;
+            }
+
+            Color color = resetFlashImage.color;
+            color.a = Mathf.Clamp01(remaining / duration) * 0.75f;
+            resetFlashImage.color = color;
         }
 
         private static void SetActive(GameObject target, bool active)

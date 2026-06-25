@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Platforming;
 using UnityEngine;
 
 namespace Traits
@@ -15,13 +17,14 @@ namespace Traits
         private bool[] initialTriggerStates;
         private SpriteRenderer[] spriteRenderers;
         private Rigidbody2D body;
+        private PlayerPlatformJump2D playerMovement;
         private float initialGravityScale;
         private RigidbodyType2D initialBodyType;
 
         private void Awake()
         {
             container = GetComponent<TraitSlotContainer>();
-            colliders = GetComponentsInChildren<Collider2D>();
+            colliders = GetGameplayColliders();
             initialTriggerStates = new bool[colliders.Length];
             for (int i = 0; i < colliders.Length; i++)
             {
@@ -29,6 +32,7 @@ namespace Traits
             }
             spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
             body = GetComponent<Rigidbody2D>();
+            playerMovement = GetComponent<PlayerPlatformJump2D>();
             if (body != null)
             {
                 initialGravityScale = body.gravityScale;
@@ -82,10 +86,17 @@ namespace Traits
                 }
                 else
                 {
-                    body.linearVelocity = Vector2.zero;
-                    body.angularVelocity = 0f;
                     body.gravityScale = 0f;
-                    body.bodyType = RigidbodyType2D.Kinematic;
+                    if (playerMovement != null)
+                    {
+                        body.bodyType = RigidbodyType2D.Dynamic;
+                    }
+                    else
+                    {
+                        body.linearVelocity = Vector2.zero;
+                        body.angularVelocity = 0f;
+                        body.bodyType = RigidbodyType2D.Kinematic;
+                    }
                 }
             }
 
@@ -105,6 +116,22 @@ namespace Traits
                     spriteRenderer.color = color;
                 }
             }
+        }
+
+        private Collider2D[] GetGameplayColliders()
+        {
+            Collider2D[] allColliders = GetComponentsInChildren<Collider2D>();
+            List<Collider2D> gameplayColliders = new List<Collider2D>();
+            for (int i = 0; i < allColliders.Length; i++)
+            {
+                Collider2D collider = allColliders[i];
+                if (collider != null && collider.GetComponent<TraitInteractionArea>() == null)
+                {
+                    gameplayColliders.Add(collider);
+                }
+            }
+
+            return gameplayColliders.ToArray();
         }
     }
 }

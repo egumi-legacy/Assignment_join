@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using MenuLevelProgression;
 using UnityEngine;
 
 namespace Traits
 {
-    public sealed class TraitSlotContainer : MonoBehaviour
+    public sealed class TraitSlotContainer : MonoBehaviour, ILevelScopedReset
     {
         [SerializeField] private bool initializePlayerDefaults;
         [SerializeField] private string displayName;
@@ -14,6 +15,9 @@ namespace Traits
         public event Action<TraitSlotContainer> SlotsChanged;
         public event Action<TraitSlotContainer> SelectionChanged;
 
+        private readonly List<TraitSlot> defaultSlots = new List<TraitSlot>();
+        private int defaultSelectedIndex;
+
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? gameObject.name : displayName;
         public IReadOnlyList<TraitSlot> Slots => slots;
         public int SelectedIndex => selectedIndex;
@@ -21,8 +25,7 @@ namespace Traits
 
         private void Awake()
         {
-            EnsureDefaultPlayerSlotsIfEmpty();
-            ClampSelection();
+            EnsureInitialized();
         }
 
         public void ConfigureSlots(IEnumerable<TraitSlot> newSlots)
@@ -30,6 +33,7 @@ namespace Traits
             slots.Clear();
             slots.AddRange(newSlots);
             ClampSelection();
+            CaptureDefaults();
             NotifyChanged();
         }
 
@@ -95,9 +99,39 @@ namespace Traits
             return TraitSwapResult.Success;
         }
 
+        public void ResetForLevel()
+        {
+            ResetToDefaults();
+        }
+
+        public void ResetToDefaults()
+        {
+            EnsureInitialized();
+            slots.Clear();
+            for (int i = 0; i < defaultSlots.Count; i++)
+            {
+                TraitSlot slot = defaultSlots[i];
+                slots.Add(new TraitSlot(slot.Trait, slot.Locked));
+            }
+
+            selectedIndex = Mathf.Clamp(defaultSelectedIndex, 0, Mathf.Max(0, slots.Count - 1));
+            NotifyChanged();
+            SelectionChanged?.Invoke(this);
+        }
+
         public void NotifyChanged()
         {
             SlotsChanged?.Invoke(this);
+        }
+
+        private void EnsureInitialized()
+        {
+            EnsureDefaultPlayerSlotsIfEmpty();
+            ClampSelection();
+            if (defaultSlots.Count == 0 && slots.Count > 0)
+            {
+                CaptureDefaults();
+            }
         }
 
         private void EnsureDefaultPlayerSlotsIfEmpty()
@@ -110,6 +144,18 @@ namespace Traits
             slots.Add(new TraitSlot(TraitType.Collidable));
             slots.Add(new TraitSlot(TraitType.ForceAffected));
             slots.Add(new TraitSlot(TraitType.Empty));
+        }
+
+        private void CaptureDefaults()
+        {
+            defaultSlots.Clear();
+            for (int i = 0; i < slots.Count; i++)
+            {
+                TraitSlot slot = slots[i];
+                defaultSlots.Add(new TraitSlot(slot.Trait, slot.Locked));
+            }
+
+            defaultSelectedIndex = selectedIndex;
         }
 
         private bool IsValidIndex(int index)
