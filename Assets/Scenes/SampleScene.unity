@@ -384,12 +384,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 14352852}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 79ce867bfa99b442788d7e6bd6940af0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Traits.TraitSlotHud
-  interaction: {fileID: 0}
-  position: {x: 16, y: 16}
-  width: 420
+  m_Script: {fileID: 11500000, guid: ca1bf9f0bb2424d28a30636016f8f44d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Traits.PlayerTraitVisual
+  spriteRenderer: {fileID: 14352853}
+  normalSprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  slimeSprite: {fileID: 0}
+  slimeCompressingSprite: {fileID: 0}
+  slimeReadySprite: {fileID: 0}
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  slimeFallbackColor: {r: 0.2, g: 1, b: 0.25, a: 1}
+  slimeCompressingFallbackColor: {r: 0.1, g: 0.8, b: 0.2, a: 1}
+  slimeReadyFallbackColor: {r: 1, g: 0.85, b: 0.15, a: 1}
 --- !u!1 &74208931
 GameObject:
   m_ObjectHideFlags: 0

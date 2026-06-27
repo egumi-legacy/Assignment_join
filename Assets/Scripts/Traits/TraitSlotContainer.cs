@@ -83,6 +83,53 @@ namespace Traits
             SelectionChanged?.Invoke(this);
         }
 
+        public TraitSwapResult TryMoveSelectedTraitToFirstEmpty(TraitSlotContainer target)
+        {
+            if (target == null)
+            {
+                return TraitSwapResult.MissingContainer;
+            }
+
+            return TryMoveTraitToFirstEmpty(selectedIndex, target);
+        }
+
+        public TraitSwapResult TryMoveTraitToFirstEmpty(int ownIndex, TraitSlotContainer target)
+        {
+            if (target == null)
+            {
+                return TraitSwapResult.MissingContainer;
+            }
+
+            if (!IsValidIndex(ownIndex))
+            {
+                return TraitSwapResult.InvalidSlot;
+            }
+
+            TraitSlot sourceSlot = slots[ownIndex];
+            if (sourceSlot.Locked)
+            {
+                return TraitSwapResult.LockedSlot;
+            }
+
+            if (sourceSlot.IsEmpty)
+            {
+                return TraitSwapResult.EmptySourceSlot;
+            }
+
+            int targetIndex = target.FindFirstUnlockedEmptySlot();
+            if (targetIndex < 0)
+            {
+                return TraitSwapResult.NoEmptySlot;
+            }
+
+            target.slots[targetIndex].Trait = sourceSlot.Trait;
+            sourceSlot.Trait = TraitType.Empty;
+
+            NotifyChanged();
+            target.NotifyChanged();
+            return TraitSwapResult.Success;
+        }
+
         public TraitSwapResult TrySwapSelectedWith(TraitSlotContainer other)
         {
             if (other == null)
@@ -178,6 +225,20 @@ namespace Traits
             }
 
             defaultSelectedIndex = selectedIndex;
+        }
+
+        private int FindFirstUnlockedEmptySlot()
+        {
+            for (int i = 0; i < slots.Count; i++)
+            {
+                TraitSlot slot = slots[i];
+                if (slot.IsEmpty && !slot.Locked)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         private bool IsValidIndex(int index)

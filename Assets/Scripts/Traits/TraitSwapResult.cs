@@ -5,6 +5,8 @@ namespace Traits
         Success,
         MissingContainer,
         InvalidSlot,
-        LockedSlot
+        LockedSlot,
+        EmptySourceSlot,
+        NoEmptySlot
     }
 }

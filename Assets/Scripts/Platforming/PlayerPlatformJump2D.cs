@@ -133,16 +133,17 @@ namespace Platforming
 
             moveInput = ReadMoveInput();
             bool canUseForceMovement = HasForceAffected;
+            bool canUseNoForceLift = !canUseForceMovement && IsGrounded;
             bool canUseSlimeJump = canUseForceMovement && HasSlimeTrait;
             bool downHeld = canUseForceMovement && moveInput.y < -0.5f;
-            bool jumpRequested = canUseForceMovement && jumpPressedThisFrame;
+            bool jumpRequested = (canUseForceMovement || canUseNoForceLift) && jumpPressedThisFrame;
 
             if (!wasGrounded && IsGrounded)
             {
                 HandleSlimeSurfaceLanding(downHeld);
             }
 
-            JumpAction action = slimeJump.Tick(Time.fixedDeltaTime, IsGrounded, downHeld, jumpRequested, HasControl && canUseForceMovement, canUseSlimeJump);
+            JumpAction action = slimeJump.Tick(Time.fixedDeltaTime, IsGrounded, downHeld, jumpRequested, HasControl && (canUseForceMovement || canUseNoForceLift), canUseSlimeJump);
             jumpPressedThisFrame = false;
 
             if (IsCompressing)

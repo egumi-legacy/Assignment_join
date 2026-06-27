@@ -54,12 +54,20 @@ namespace MenuLevelProgression
 
         private void Update()
         {
-            if (state == GameFlowState.Playing && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            if (state == GameFlowState.Playing && Keyboard.current != null)
             {
-                PauseGame();
+                if (Keyboard.current.escapeKey.wasPressedThisFrame)
+                {
+                    PauseGame();
+                }
+
+                if (Keyboard.current.rKey.wasPressedThisFrame)
+                {
+                    RestartCurrentLevelWithFeedback();
+                }
             }
 
-            if (state == GameFlowState.Playing && IsPlayerBelowScreen())
+            if (state == GameFlowState.Playing && IsPlayerOutOfScreen())
             {
                 RestartCurrentLevelWithFeedback();
             }
@@ -257,7 +265,7 @@ namespace MenuLevelProgression
             player.gameObject.SetActive(active);
         }
 
-        private bool IsPlayerBelowScreen()
+        private bool IsPlayerOutOfScreen()
         {
             if (player == null || !player.gameObject.activeInHierarchy)
             {
@@ -270,8 +278,14 @@ namespace MenuLevelProgression
                 return false;
             }
 
-            float cameraBottom = camera.ViewportToWorldPoint(Vector3.zero).y;
-            return player.position.y < cameraBottom - Mathf.Max(0f, outOfScreenMargin);
+            float margin = Mathf.Max(0f, outOfScreenMargin);
+            float verticalMargin = camera.orthographic && camera.orthographicSize > 0f ? margin / (camera.orthographicSize * 2f) : 0f;
+            float horizontalMargin = camera.orthographic && camera.orthographicSize > 0f && camera.aspect > 0f ? margin / (camera.orthographicSize * 2f * camera.aspect) : 0f;
+            Vector3 viewportPosition = camera.WorldToViewportPoint(player.position);
+            return viewportPosition.x < -horizontalMargin
+                || viewportPosition.x > 1f + horizontalMargin
+                || viewportPosition.y < -verticalMargin
+                || viewportPosition.y > 1f + verticalMargin;
         }
 
         private bool HasLevel(int levelId)

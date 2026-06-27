@@ -13,8 +13,9 @@ namespace Traits
         [SerializeField] private Sprite slimeCompressingSprite;
         [SerializeField] private Sprite slimeReadySprite;
         [SerializeField] private Color normalColor = Color.white;
-        [SerializeField] private Color slimeFallbackColor = new Color(0.35f, 1f, 0.35f, 1f);
-        [SerializeField] private Color slimeReadyFallbackColor = new Color(0.7f, 1f, 0.35f, 1f);
+        [SerializeField] private Color slimeFallbackColor = new Color(0.2f, 1f, 0.25f, 1f);
+        [SerializeField] private Color slimeCompressingFallbackColor = new Color(0.1f, 0.8f, 0.2f, 1f);
+        [SerializeField] private Color slimeReadyFallbackColor = new Color(1f, 0.85f, 0.15f, 1f);
 
         private TraitSlotContainer traits;
         private PlayerPlatformJump2D movement;
@@ -96,7 +97,7 @@ namespace Traits
 
             if (movement != null && movement.IsCompressing)
             {
-                SetVisual(FirstSprite(slimeCompressingSprite, slimeSprite, normalSprite, capturedNormalSprite, spriteRenderer.sprite), slimeCompressingSprite != null ? Color.white : slimeFallbackColor);
+                SetVisual(FirstSprite(slimeCompressingSprite, slimeSprite, normalSprite, capturedNormalSprite, spriteRenderer.sprite), slimeCompressingSprite != null ? Color.white : slimeCompressingFallbackColor);
                 return;
             }
 

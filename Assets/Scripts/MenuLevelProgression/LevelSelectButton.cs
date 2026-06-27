@@ -8,7 +8,7 @@ namespace MenuLevelProgression
     {
         [SerializeField] private Button button;
         [SerializeField] private Text label;
-        [SerializeField] private string lockedSuffix = " (Locked)";
+        [SerializeField] private string lockedSuffix = "（未解锁）";
 
         private void Reset()
         {

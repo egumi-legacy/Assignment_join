@@ -29,39 +29,61 @@ namespace Traits
                 return;
             }
 
+            float margin = Mathf.Max(8f, position.x);
+            float top = Mathf.Max(8f, position.y);
+            float panelWidth = Mathf.Min(width, Mathf.Max(220f, (Screen.width - margin * 3f) * 0.5f));
+            float panelHeight = 280f;
+
             StringBuilder playerBuilder = new StringBuilder();
             playerBuilder.AppendLine("主角特性槽");
-            playerBuilder.AppendLine("滚轮：选择主角槽");
-            playerBuilder.AppendLine("Shift：交换选中槽");
             playerBuilder.AppendLine();
-            AppendContainer(playerBuilder, "主角", interaction.PlayerTraits);
-            GUI.Box(new Rect(position.x, position.y, width, 180f), playerBuilder.ToString(), boxStyle);
+            AppendContainer(playerBuilder, interaction.PlayerTraits);
+            GUI.Box(new Rect(margin, top, panelWidth, panelHeight), playerBuilder.ToString(), boxStyle);
 
             StringBuilder objectBuilder = new StringBuilder();
             if (interaction.HoveredTraits != null)
             {
                 objectBuilder.AppendLine("物体特性槽");
-                objectBuilder.AppendLine("悬停时滚轮：选择物体槽");
                 objectBuilder.AppendLine();
-                AppendContainer(objectBuilder, interaction.HoveredTraits.DisplayName, interaction.HoveredTraits);
+                AppendContainer(objectBuilder, interaction.HoveredTraits);
             }
             else
             {
                 objectBuilder.AppendLine("物体特性槽");
+                objectBuilder.AppendLine();
                 objectBuilder.AppendLine("将鼠标移动到物体上查看特性");
             }
 
-            GUI.Box(new Rect(Screen.width - width - position.x, position.y, width, 180f), objectBuilder.ToString(), boxStyle);
+            GUI.Box(new Rect(Screen.width - panelWidth - margin, top, panelWidth, panelHeight), objectBuilder.ToString(), boxStyle);
+
+            StringBuilder hintBuilder = new StringBuilder();
+            hintBuilder.AppendLine("滚轮：选择槽    出现绿色虚线时可 Shift 交换 / E 获取到空槽    R：重开");
+            if (ShouldShowSlimeHint())
+            {
+                hintBuilder.AppendLine("史莱姆：拥有史莱姆状态时按住下蓄力，变色后按跳可以大跳");
+            }
 
             if (!string.IsNullOrEmpty(interaction.FeedbackMessage))
             {
-                GUI.Box(new Rect(position.x, position.y + 190f, width * 2f + 24f, 56f), interaction.FeedbackMessage, boxStyle);
+                hintBuilder.AppendLine(interaction.FeedbackMessage);
             }
+
+            float hintHeight = 28f + hintBuilder.ToString().Split('\n').Length * 22f;
+            GUI.Box(new Rect(margin, Screen.height - hintHeight - margin, Screen.width - margin * 2f, hintHeight), hintBuilder.ToString(), boxStyle);
         }
 
-        private static void AppendContainer(StringBuilder builder, string title, TraitSlotContainer container)
+        private bool ShouldShowSlimeHint()
         {
-            builder.AppendLine(title);
+            return HasSlime(interaction.PlayerTraits) || HasSlime(interaction.HoveredTraits);
+        }
+
+        private static bool HasSlime(TraitSlotContainer container)
+        {
+            return container != null && container.HasTrait(TraitType.Slime);
+        }
+
+        private static void AppendContainer(StringBuilder builder, TraitSlotContainer container)
+        {
             if (container == null || container.Slots.Count == 0)
             {
                 builder.AppendLine("  （无特性槽）");
@@ -74,6 +96,7 @@ namespace Traits
                 string selected = i == container.SelectedIndex ? ">" : " ";
                 string locked = slot.Locked ? " 🔒" : string.Empty;
                 builder.AppendLine($"  {selected} [{i + 1}] {FormatTrait(slot.Trait)}{locked}");
+                builder.AppendLine($"      {FormatTraitDescription(slot.Trait)}");
             }
         }
 
@@ -89,6 +112,21 @@ namespace Traits
                     return "史莱姆";
                 default:
                     return "空槽";
+            }
+        }
+
+        private static string FormatTraitDescription(TraitType trait)
+        {
+            switch (trait)
+            {
+                case TraitType.Collidable:
+                    return "阻挡/站立，可作为实体平台";
+                case TraitType.ForceAffected:
+                    return "受重力/推力影响，可常规跳跃";
+                case TraitType.Slime:
+                    return "绿色弹性；按住下蓄力后大跳";
+                default:
+                    return "可接收其他特性";
             }
         }
 
